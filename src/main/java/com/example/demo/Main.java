@@ -2,9 +2,13 @@ package com.example.demo;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.util.ReflectionUtils;
 import org.springframework.web.bind.annotation.*;
 
+import java.lang.reflect.Field;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @SpringBootApplication
 @RestController
@@ -40,5 +44,27 @@ public class Main {
     @DeleteMapping("{customerId}")
     public void deleteCustomer(@PathVariable ("customerId") Integer id) {
         customerRepository.deleteById(id);
+    }
+
+    @PatchMapping("{customerId}")
+    public void updateCustomerDetails(@PathVariable ("customerId") Integer id, @RequestBody Map<String, Object> fields) {
+        Customer customer = customerRepository.getById(id);
+
+            fields.forEach((key, value)-> {
+                Field field = ReflectionUtils.findField(Customer.class, key);
+                field.setAccessible(true);
+                ReflectionUtils.setField(field, customer, value);
+            });
+
+        customerRepository.save(customer);
+    }
+
+    @PutMapping("{customerId}")
+    public void updateAllCustomerDetails(@PathVariable ("customerId") Integer id, @RequestBody NewCustomerRequest request) {
+        Customer customer = customerRepository.getById(id);
+        customer.setEmailAddress(request.emailAddress());
+        customer.setName(request.name());
+        customer.setAge(request.age());
+        customerRepository.save(customer);
     }
 }
