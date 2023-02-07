@@ -30,6 +30,17 @@ public class Main {
         return customerRepository.findAll();
     }
 
+    @GetMapping("{customerId}")
+    public Optional<Customer> getCustomer(@PathVariable ("customerId") Integer id) {
+
+        if(customerRepository.findById(id)!=null) {
+            return customerRepository.findById(id);
+        } else {
+            throw new RuntimeException("Bitch there ain't no user.");
+        }
+
+    }
+
     record NewCustomerRequest(String emailAddress, String name, Integer age) {};
 
     @PostMapping
@@ -48,20 +59,22 @@ public class Main {
 
     @PatchMapping("{customerId}")
     public void updateCustomerDetails(@PathVariable ("customerId") Integer id, @RequestBody Map<String, Object> fields) {
-        Customer customer = customerRepository.getById(id);
+        Customer customer = customerRepository.getReferenceById(id);
 
-            fields.forEach((key, value)-> {
+            fields.forEach((key, value) -> {
                 Field field = ReflectionUtils.findField(Customer.class, key);
-                field.setAccessible(true);
-                ReflectionUtils.setField(field, customer, value);
+                if(field!=null) {
+                    field.setAccessible(true);
+                    ReflectionUtils.setField(field, customer, value);
+                }
             });
 
-        customerRepository.save(customer);
+            customerRepository.save(customer);
     }
 
     @PutMapping("{customerId}")
     public void updateAllCustomerDetails(@PathVariable ("customerId") Integer id, @RequestBody NewCustomerRequest request) {
-        Customer customer = customerRepository.getById(id);
+        Customer customer = customerRepository.getReferenceById(id);
         customer.setEmailAddress(request.emailAddress());
         customer.setName(request.name());
         customer.setAge(request.age());
